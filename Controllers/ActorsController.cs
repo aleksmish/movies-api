@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MoviesAPI.DTOs;
@@ -9,6 +11,7 @@ namespace MoviesAPI.Controllers
 {
     [Route("api/actors")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "IsAdmin")]
     public class ActorsController : ControllerBase
     {
         private readonly ApplicationDbContext context;
@@ -47,6 +50,22 @@ namespace MoviesAPI.Controllers
             var actorDTO = mapper.Map<ActorDTO>(actor);
 
             return actorDTO;
+        }
+
+        [HttpGet("searchByName/{query}")]
+        public async Task<ActionResult<List<MovieActorDTO>>> SearchActorByName(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return new List<MovieActorDTO>();
+            }
+
+            return await context.Actors
+                .Where(a => a.Name.ToLower().Contains(query.ToLower()))
+                .OrderBy(a => a.Name)
+                .Select(a => new MovieActorDTO { Id = a.Id, Name = a.Name, Picture = a.Picture })
+                .Take(5)
+                .ToListAsync();
         }
 
         [HttpPost]

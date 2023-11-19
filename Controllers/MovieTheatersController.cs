@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MoviesAPI.DTOs;
@@ -9,6 +11,7 @@ namespace MoviesAPI.Controllers
 {
     [ApiController]
     [Route("api/movie-theaters")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "IsAdmin")]
     public class MovieTheatersController : ControllerBase
     {
         private readonly ApplicationDbContext context;
@@ -23,7 +26,7 @@ namespace MoviesAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<List<MovieTheaterDTO>>> GetAllMovieTheaters([FromQuery] PaginationDTO paginationDTO)
         {
-            var queryable = context.MoviesTheaters.AsQueryable();
+            var queryable = context.MovieTheaters.AsQueryable();
 
             await HttpContext.InsertPaginationToHeader(queryable);
 
@@ -36,7 +39,7 @@ namespace MoviesAPI.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<MovieTheaterDTO>> GetMovieTheaterById(int id)
         {
-            var movieTheater = await context.MoviesTheaters.FirstOrDefaultAsync(movieTheater => movieTheater.Id == id);
+            var movieTheater = await context.MovieTheaters.FirstOrDefaultAsync(movieTheater => movieTheater.Id == id);
 
             if (movieTheater == null)
             {
@@ -53,7 +56,7 @@ namespace MoviesAPI.Controllers
         {
             var movieTheater = mapper.Map<MovieTheater>(movieTheaterCreationDTO);
 
-            await context.MoviesTheaters.AddAsync(movieTheater);
+            await context.MovieTheaters.AddAsync(movieTheater);
             await context.SaveChangesAsync();
 
             return NoContent();
@@ -62,14 +65,14 @@ namespace MoviesAPI.Controllers
         [HttpPut("{id:int}")]
         public async Task<ActionResult> EditMovieTheater(int id, [FromBody] MovieTheaterEditingDTO movieTheaterEditingDTO)
         {
-            var movieTheater = await context.MoviesTheaters.FirstOrDefaultAsync(movieTheater => movieTheater.Id == id);
+            var movieTheater = await context.MovieTheaters.FirstOrDefaultAsync(movieTheater => movieTheater.Id == id);
 
             if (movieTheater == null)
             {
                 return NotFound();
             }
 
-            mapper.Map<MovieTheater>(movieTheater);
+            mapper.Map(movieTheaterEditingDTO, movieTheater);
             await context.SaveChangesAsync();
 
             return NoContent();
@@ -78,14 +81,14 @@ namespace MoviesAPI.Controllers
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> DeleteMovieTheater(int id)
         {
-            var movieTheater = await context.MoviesTheaters.FirstOrDefaultAsync(movieTheater => movieTheater.Id == id);
+            var movieTheater = await context.MovieTheaters.FirstOrDefaultAsync(movieTheater => movieTheater.Id == id);
 
             if (movieTheater == null)
             {
                 return NotFound();
             }
 
-            context.MoviesTheaters.Remove(movieTheater);
+            context.MovieTheaters.Remove(movieTheater);
             await context.SaveChangesAsync();
 
             return NoContent();
